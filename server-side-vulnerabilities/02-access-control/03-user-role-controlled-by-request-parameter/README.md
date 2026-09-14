@@ -23,4 +23,4 @@ Como pode ver, ele salvou no cookie. Então podemos fazer de 2 modos:
 ![image](../../imgs/02/03/3.png)
 
 ---
-[⬅ Voltar](../README.md)
+[⬅ Voltar](../../README.md)
