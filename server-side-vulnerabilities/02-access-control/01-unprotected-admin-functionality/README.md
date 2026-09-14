@@ -15,3 +15,6 @@ Buscando lá temos uma página que está configurada para não mostrar `/adminis
 Buscando por ela, lá está:
 
 ![image](../../imgs/02/01/2.png)
+
+---
+[⬅ Voltar](../README.md)

@@ -23,3 +23,6 @@ Precisamos passar `../../../etc/passwd` no `filename`:
 ```jsx
 /image?filename=../../../etc/passwd
 ```
+
+---
+[⬅ Voltar](../README.md)

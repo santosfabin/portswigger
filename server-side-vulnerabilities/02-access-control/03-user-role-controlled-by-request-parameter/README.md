@@ -21,3 +21,6 @@ Como pode ver, ele salvou no cookie. Então podemos fazer de 2 modos:
 2. Interceptar a requisição e trocar o cookie de `Admin=false` para `Admin=true`.
 
 ![image](../../imgs/02/03/3.png)
+
+---
+[⬅ Voltar](../README.md)
