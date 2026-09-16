@@ -7,3 +7,4 @@ Cada lab tem seu próprio `README.md` com o enunciado traduzido e o passo a pass
 ## Sumário
 
 - [Server-side vulnerabilities](./server-side-vulnerabilities/README.md)
+- [SQL injection](./sql-injection/README.md)
