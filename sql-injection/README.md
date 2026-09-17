@@ -17,5 +17,15 @@
 - 05 - Using a SQL injection UNION attack to retrieve interesting data
   - [01 - SQL injection UNION attack, retrieving data from other tables](./05-using-a-aql-injection-union-attack-to-retrieve-interesting/01-sql-injection-union-attack-retrieving-data-from-other-tables/README.md)
 
+- 06 - Retrieving multiple values within a single column
+  - [01 - SQL injection UNION attack, retrieving multiple values in a single column](./06-retrieving-multiple-values-within-a-single-column/01-sql-injection-union-attack-retrieving-multiple-values-in-a-single-column/README.md)
+
+- 07 - Examining the database
+  - [01 - SQL injection attack, querying the database type and version on MySQL and Microsoft](./07-examining-the-database/01-sql-injection-attack-querying-the-database-type-and-version-on-mysql-and-microsoft/README.md)
+  - [02 - SQL injection attack, listing the database contents on non-Oracle databases](./07-examining-the-database/02-sql-injection-attack-listing-the-database-contents-on-non-oracle-databases/README.md)
+
+- 08 - Exploiting blind SQL injection by triggering conditional responses
+  - [01 - Blind SQL injection with conditional responses](./08-blind-sql-injection/01-blind-sql-injection-with-conditional-responses/README.md)
+
 ---
 [⬅ Voltar](../README.md)
