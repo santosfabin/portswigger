@@ -27,5 +27,9 @@
 - 08 - Exploiting blind SQL injection by triggering conditional responses
   - [01 - Blind SQL injection with conditional responses](./08-blind-sql-injection/01-blind-sql-injection-with-conditional-responses/README.md)
 
+- 09 - Error-based SQL injection 
+  - [01 - Blind SQL injection with conditional errors](./09-error-based-sql-injection/01-blind-sql-injection-with-conditional-errors/README.md)
+  - [02 - Visible error-based SQL injection](./09-error-based-sql-injection/02-visible-error-based-sql-injection/README.md)
+
 ---
 [⬅ Voltar](../README.md)
