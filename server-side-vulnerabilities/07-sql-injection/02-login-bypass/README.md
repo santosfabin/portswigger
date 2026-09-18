@@ -1,34 +1,87 @@
 # Lab: SQL injection vulnerability allowing login bypass
 
 ## Enunciado (traduzido)
+
 Este lab contém uma vulnerabilidade de SQL injection na função de login.
 
 Para resolver o lab, realize um ataque de SQL injection que faça login na aplicação como o usuário `administrator`.
 
 ## O que fiz
 
-A funcionalidade de login provavelmente executa uma consulta SQL verificando se o par de usuário e senha coincide:
+Ao navegar pela aplicação, inspecionei o HTML de uma página de produto e encontrei a tag de imagem:
 
-```sql
-SELECT * FROM users WHERE username = 'wiener' AND password = 'peter'
+```html
+<img src="/image?filename=18.jpg" />
 ```
 
-Para logar como `administrator` sem saber a senha, o objetivo é fazer a query validar apenas o nome de usuário e ignorar a checagem da senha.
+O parâmetro `filename` recebe diretamente o nome do arquivo. Isso é imediatamente suspeito: se a aplicação não sanitizar esse valor, posso controlar qual arquivo o servidor vai buscar no disco.
 
-No campo **username**, inseri:
-```text
-administrator'--
+O servidor provavelmente monta o caminho assim internamente:
+
+```
+/var/www/images/ + filename
 ```
 
-No campo de senha, preenchi qualquer valor apenas para passar pela validação visual do front-end.
+Se eu passar `../../../etc/passwd`, o caminho resultante seria:
 
-Com a injeção, a query executada no backend virou:
-
-```sql
-SELECT * FROM users WHERE username = 'administrator'--' AND password = 'qualquercoisa'
+```
+/var/www/images/../../../etc/passwd
 ```
 
-A sequência `--` (com espaço) comenta todo o restante da consulta original a partir dali, anulando a verificação `AND password = '...'`. Como o usuário `administrator` existe no banco, a query retornou o registro com sucesso e a sessão de admin foi iniciada.
+Que o sistema operacional resolve como:
+
+```
+/etc/passwd
+```
 
 ---
+
+Não sei de antemão onde no sistema de arquivos o servidor armazena as imagens. Precisei testar quantos `../` são necessários para chegar à raiz (`/`) e então descer até `/etc/passwd`.
+
+Testei incrementalmente:
+
+**1 nível — sem efeito:**
+
+```
+/image?filename=../etc/passwd
+```
+
+→ Erro ou imagem quebrada. Ainda dentro da pasta de imagens ou abaixo dela.
+
+**2 níveis — ainda sem efeito:**
+
+```
+/image?filename=../../etc/passwd
+```
+
+→ Mesma resposta. Ainda não cheguei à raiz.
+
+**3 níveis — funcionou:**
+
+```
+/image?filename=../../../etc/passwd
+```
+
+→ O servidor retornou o conteúdo do arquivo `/etc/passwd`.
+
+Isso indica que as imagens ficam 3 níveis abaixo da raiz do sistema de arquivos, provavelmente em algo como `/var/www/images/`.
+
+---
+
+O arquivo `/etc/passwd` é um arquivo padrão de sistemas Unix/Linux que lista os usuários do sistema. Cada linha tem o formato:
+
+```
+username:password:UID:GID:info:home:shell
+```
+
+O campo `password` hoje geralmente contém apenas `x`, indicando que a senha real fica em `/etc/shadow` (que é mais restrito). Mas o `/etc/passwd` ainda é valioso para um atacante porque revela:
+
+- Quais usuários existem no sistema
+- Os diretórios home de cada usuário
+- Quais shells estão em uso
+
+A simples leitura desse arquivo já configura uma **divulgação de informação sensível** e prova que o atacante tem leitura arbitrária de arquivos no servidor.
+
+---
+
 [⬅ Voltar](../../../README.md)
