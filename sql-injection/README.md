@@ -31,5 +31,8 @@
   - [01 - Blind SQL injection with conditional errors](./09-error-based-sql-injection/01-blind-sql-injection-with-conditional-errors/README.md)
   - [02 - Visible error-based SQL injection](./09-error-based-sql-injection/02-visible-error-based-sql-injection/README.md)
 
+- 10 - Exploiting blind SQL injection by triggering time delays
+  - [01 - Blind SQL injection with time delays and information retrieval](./10-exploiting-blind-sql-injection-by-triggering-time-delays/01-blind-sql-injection-with-time-delays-and-information-retrieval/README.md)
+
 ---
 [⬅ Voltar](../README.md)
