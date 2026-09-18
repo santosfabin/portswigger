@@ -28,4 +28,4 @@ Então enviar a API key dele em "Submit solution".
 ![image](../../imgs/02/04/2.png)
 
 ---
-[⬅ Voltar](../../README.md)
+[⬅ Voltar](../../../README.md)

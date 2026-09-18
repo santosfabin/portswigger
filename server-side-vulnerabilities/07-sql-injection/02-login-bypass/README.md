@@ -31,4 +31,4 @@ SELECT * FROM users WHERE username = 'administrator'-- ' AND password = 'qualque
 O `-- ` comenta todo o resto da query a partir dali, incluindo o `AND password = '...'`. Ou seja, a query passa a checar só se existe um usuário chamado `administrator`, ignorando completamente a senha — e como esse usuário existe, o login é feito com sucesso.
 
 ---
-[⬅ Voltar](../../README.md)
+[⬅ Voltar](../../../README.md)

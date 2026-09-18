@@ -17,4 +17,4 @@ Buscando por ela, lá está:
 ![image](../../imgs/02/01/2.png)
 
 ---
-[⬅ Voltar](../../README.md)
+[⬅ Voltar](../../../README.md)

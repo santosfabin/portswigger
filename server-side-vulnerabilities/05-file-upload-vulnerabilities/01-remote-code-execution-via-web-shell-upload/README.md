@@ -22,4 +22,4 @@ No lugar onde a imagem seria carregada, conseguimos acessá-la:
 Acessando a URL `…net/files/avatars/foto.php`.
 
 ---
-[⬅ Voltar](../../README.md)
+[⬅ Voltar](../../../README.md)

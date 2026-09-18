@@ -138,4 +138,4 @@ Com o nome da tabela e os nomes das duas colunas descobertos, montamos a query f
 A tela exibiu a lista completa de usuários e senhas. Copiamos a senha da conta `administrator`, fomos até a página de login (`/login`), autenticamos com sucesso e o lab foi resolvido.
 
 
-[⬅ Voltar](../../README.md)
+[⬅ Voltar](../../../README.md)

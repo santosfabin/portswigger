@@ -28,4 +28,4 @@ Bastou trocar o valor para `image/jpeg`, fazendo o servidor acreditar que era um
 Depois disso, é só acessar a imagem normalmente pra executar o PHP, como no lab anterior.
 
 ---
-[⬅ Voltar](../../README.md)
+[⬅ Voltar](../../../README.md)

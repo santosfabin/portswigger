@@ -15,4 +15,4 @@ Na tela de verificação do 2FA, em vez de inserir o código, voltei para a pág
 Nesse caso, a aplicação já havia salvo a sessão do usuário como logada antes mesmo de terminar a verificação de dois fatores, permitindo acessar a conta sem informar o código.
 
 ---
-[⬅ Voltar](../../README.md)
+[⬅ Voltar](../../../README.md)
