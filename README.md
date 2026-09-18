@@ -91,7 +91,3 @@ O objetivo deste material não é apenas registrar payloads de exploração, mas
 ### 11 - SQL injection in different contexts
 
 - [01 - SQL injection with filter bypass via XML encoding](./sql-injection/11-sql-injection-in-different-contexts/01-sql-injection-with-filter-bypass-via-xml-encoding/README.md)
-
----
-
-[⬅ Voltar](../README.md)
