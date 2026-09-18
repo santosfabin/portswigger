@@ -7,28 +7,28 @@ Para resolver o lab, realize um ataque de SQL injection que faça login na aplic
 
 ## O que fiz
 
-O login provavelmente executa uma query parecida com esta, verificando se existe um usuário com aquele username E aquela senha:
+A funcionalidade de login provavelmente executa uma consulta SQL verificando se o par de usuário e senha coincide:
 
 ```sql
 SELECT * FROM users WHERE username = 'wiener' AND password = 'peter'
 ```
 
-Pra logar como `administrator` sem saber a senha, o objetivo é fazer a query considerar a linha do `administrator` como válida, ignorando a checagem de senha.
+Para logar como `administrator` sem saber a senha, o objetivo é fazer a query validar apenas o nome de usuário e ignorar a checagem da senha.
 
-No campo **username**, coloquei:
+No campo **username**, inseri:
+```text
+administrator'--
 ```
-administrator ' or 1=1 --
-```
 
-E no campo **senha**, qualquer valor, só pra passar pela validação de campo obrigatório (o valor da senha não importa, pois nem chega a ser checado).
+No campo de senha, preenchi qualquer valor apenas para passar pela validação visual do front-end.
 
-Isso faz a query virar:
+Com a injeção, a query executada no backend virou:
 
 ```sql
-SELECT * FROM users WHERE username = 'administrator'-- ' AND password = 'qualquercoisa'
+SELECT * FROM users WHERE username = 'administrator'--' AND password = 'qualquercoisa'
 ```
 
-O `-- ` comenta todo o resto da query a partir dali, incluindo o `AND password = '...'`. Ou seja, a query passa a checar só se existe um usuário chamado `administrator`, ignorando completamente a senha — e como esse usuário existe, o login é feito com sucesso.
+A sequência `--` (com espaço) comenta todo o restante da consulta original a partir dali, anulando a verificação `AND password = '...'`. Como o usuário `administrator` existe no banco, a query retornou o registro com sucesso e a sessão de admin foi iniciada.
 
 ---
 [⬅ Voltar](../../../README.md)

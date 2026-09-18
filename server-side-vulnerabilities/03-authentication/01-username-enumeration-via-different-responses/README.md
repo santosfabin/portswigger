@@ -1,6 +1,7 @@
 # Lab: Username enumeration via different responses
 
 ## Enunciado (traduzido)
+
 Este lab é vulnerável a enumeração de usernames e ataques de força bruta de senha. Ele tem uma conta com username e senha previsíveis, que podem ser encontrados nas seguintes wordlists:
 
 - Candidate usernames
@@ -49,6 +50,7 @@ Repeti o mesmo processo no Intruder, agora com o username fixo em `auth` e varia
 Troquei o Grep-Match de `Invalid` para `Incorrect`, e usei a lista de senhas em `Payload configuration`.
 
 Assim encontrei a combinação:
+
 ```
 username=auth
 password=987654321
@@ -56,5 +58,8 @@ password=987654321
 
 ![image](../../imgs/03/01/9.png)
 
+Fiz login com as credenciais encontradas e acessei a página da conta, concluindo o lab.
+
 ---
+
 [⬅ Voltar](../../../README.md)

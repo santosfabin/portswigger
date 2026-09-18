@@ -9,17 +9,21 @@ Você pode logar na sua própria conta usando as credenciais: `wiener:peter`
 
 ## O que fiz
 
-Para resolver, primeiro fizemos login e, no campo de upload de imagem, enviamos um arquivo `.php` com o seguinte conteúdo:
+Fiz login com a conta de teste (`wiener:peter`) e acessei a funcionalidade de upload de avatar no perfil da conta.
+
+Como o servidor não valida o tipo nem a extensão dos arquivos enviados, criei um script PHP simples (`exploit.php`) para ler o arquivo do Carlos:
 
 ```php
 <?php echo file_get_contents('/home/carlos/secret'); ?>
 ```
 
-No lugar onde a imagem seria carregada, conseguimos acessá-la:
+Fiz o upload do arquivo e inspecionei a página para encontrar o caminho onde os avatares ficam salvos:
 
 ![image](../../imgs/05/01/1.png)
 
-Acessando a URL `…net/files/avatars/foto.php`.
+Acessei diretamente a URL do arquivo no servidor (`/files/avatars/exploit.php`).
+
+O backend interpretou e executou o código PHP, retornando o conteúdo do arquivo `/home/carlos/secret` no corpo da resposta. Copiei o segredo e enviei na solução.
 
 ---
 [⬅ Voltar](../../../README.md)

@@ -6,15 +6,17 @@ Resolva o lab acessando o painel de admin e deletando o usuário carlos.
 
 ## O que fiz
 
-Primeiro vamos pensar onde possivelmente pode existir algo para um admin usar assim que abre a página.
+Como o painel de admin não tem nenhum botão ou link visível na tela, comecei inspecionando o código-fonte da página inicial para ver se havia alguma pista deixada no front-end.
 
-Um lugar onde ele possivelmente pode acessar suas funcionalidades é pelo header.
-
-Inspecionando o header, lá está a url `/admin-4g0nar`.
+Analisando o HTML e os scripts carregados na página, encontrei uma referência a uma rota administrativa:
 
 ![image](../../imgs/02/02/1.png)
 
-Depois é só excluir o carlos.
+A rota encontrada foi `/admin-4g0nar`.
+
+Ao acessar esse caminho diretamente no navegador, o painel abriu sem exigir autenticação.
+
+Dentro dele, utilizei a opção de deletar o usuário `carlos`, finalizando o lab:
 
 ![image](../../imgs/02/02/2.png)
 

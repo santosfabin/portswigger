@@ -9,17 +9,21 @@ Você pode logar na sua própria conta usando as credenciais: `wiener:peter`
 
 ## O que fiz
 
-Iniciei fazendo login afim de ver possíveis lugares onde podemos testar.
+Fiz login com a conta de testes (`wiener:peter`) para verificar como os dados do perfil eram carregados.
 
-Após fazer login, olhando na url, temos o usuário que está logado.
+Ao acessar a conta, reparei que a URL usava o nome do usuário diretamente como parâmetro:
+`/my-account?id=wiener`
 
-Vamos testar trocar nosso user pelo `administrator` para ver o que acontece.
+Para testar se havia validação de autorização no backend, alterei o parâmetro para `administrator`:
+`/my-account?id=administrator`
 
-Ele tratou como se fosse o próprio user, então basta ver a senha e fazer login com ele. Para isso, você pode ir no inspecionar e trocar de `type="password"` para `type="text"`.
+A aplicação carregou a página do administrador, exibindo o formulário com o campo de senha mascarado pré-preenchido.
+
+Inspecionei o elemento no DevTools e alterei o atributo de `type="password"` para `type="text"` para revelar a senha em texto claro:
 
 ![image](../../imgs/02/05/1.png)
 
-Então é só logar colocando a senha que descobrimos e deletar o user carlos.
+Com a senha recuperada, desloguei da conta de teste, fiz login como `administrator` e deletei o usuário `carlos` pelo painel:
 
 ![image](../../imgs/02/05/2.png)
 
