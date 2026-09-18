@@ -34,5 +34,8 @@
 - 10 - Exploiting blind SQL injection by triggering time delays
   - [01 - Blind SQL injection with time delays and information retrieval](./10-exploiting-blind-sql-injection-by-triggering-time-delays/01-blind-sql-injection-with-time-delays-and-information-retrieval/README.md)
 
+- 11 - SQL injection in different
+  - [01 - SQL injection with filter bypass via XML encoding](./11-sql-injection-in-different-contexts/01-sql-injection-with-filter-bypass-via-xml-encoding/README.md)
+
 ---
 [⬅ Voltar](../README.md)
