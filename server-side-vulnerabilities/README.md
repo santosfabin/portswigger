@@ -13,7 +13,7 @@
 
 - 03 - Authentication
   - [01 -Username enumeration via different responses](./03-authentication/01-username-enumeration-via-different-responses/README.md)
-  - [02 - Username enumeration via different responses](./03-authentication/02-2fa-simple-bypass/README.md)
+  - [02 - 2FA simple bypass](./03-authentication/02-2fa-simple-bypass/README.md)
 
 - 04 - Server-side request forgery (SSRF)
   - [01 - Basic SSRF against the local server](./04-ssrf/01-basic-ssrf-against-localhost/README.md)
